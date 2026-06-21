@@ -4,6 +4,7 @@ import { users, type NewUser } from "../db/schema.js";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken"
+import { auth, type AuthRequest } from "../middleware/auth.js";
 
 const authRouter = Router();
 
@@ -67,10 +68,13 @@ authRouter.post("/login", async (req: Request<{}, {}, LoginBody>, res: Response)
                 return;
         }
         const token = jwt.sign({id:existingUser.id},"passwordKey");
-        
-        const { password: _, ...userWithoutPassword } = existingUser;
 
-        res.json({ token, ...userWithoutPassword });  // ✅ no password hash exposed
+        res.json({token,...existingUser});
+        // const token = jwt.sign({id:existingUser.id},"passwordKey");
+        
+        // const { password: _, ...userWithoutPassword } = existingUser;
+
+        // res.json({ token, ...userWithoutPassword });  // ✅ no password hash exposed
 
     } catch (e) {
         res.status(500).json({ error: e });
@@ -78,8 +82,57 @@ authRouter.post("/login", async (req: Request<{}, {}, LoginBody>, res: Response)
 });
 
 
-authRouter.get("/", (req, res) => {
-    res.send("Hey there from auth");
+authRouter.post("/tokenIsValid",async(req,res)=>{
+    try{
+
+        const token =req.header("X-Authorization");
+        if(!token){
+            res.json(false);
+            return;
+        }
+        const verified=jwt.verify(token,"passwordKey");
+
+        if (!verified){
+            res.json(false);
+            return;
+
+        }
+        const verifiedToken = verified as {id:string};
+
+
+        const [user] = await db.select().from(users).where(eq(users.id,verifiedToken.id));
+        if(!user){
+            res.json(false);
+            return;
+        }
+        res.json(true);
+    }
+    catch (e) {
+        res.status(500).json(false);
+    }
+    
+})
+
+authRouter.get("/",auth, async (req :AuthRequest, res) => {
+    //req.user;
+    //res.send("Hey there from auth");
+    //res.send(req.token);
+    try{
+        if (!req.user){
+             res.status(401).json({msg:"User Not Found "});
+             return;
+
+
+        }
+        const[user]= await db.select().from(users).where(eq(users.id,req.user));
+
+        res.json({...user,token:req.token});
+    }
+    catch (e) {
+        res.status(500).json(false);
+    }
+    
+
 });
 
 export default authRouter;
