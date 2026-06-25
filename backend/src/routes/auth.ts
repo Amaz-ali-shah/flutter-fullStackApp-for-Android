@@ -57,14 +57,14 @@ authRouter.post("/login", async (req: Request<{}, {}, LoginBody>, res: Response)
         const [existingUser] = await db.select().from(users).where(eq(users.email, email));
 
         if (!existingUser) {
-            res.status(400).json({ msg: "User with the Email does not exist!" });
+            res.status(400).json({ error: "User with the Email does not exist!" });
             return;
         }
 
         const isMatch = await bcrypt.compare(password, existingUser.password);
 
         if(!isMatch){
-                res.status(400).json({msg: "Incorrect Password"});
+                res.status(400).json({error: "Incorrect Password"});
                 return;
         }
         const token = jwt.sign({id:existingUser.id},"passwordKey");
@@ -119,7 +119,7 @@ authRouter.get("/",auth, async (req :AuthRequest, res) => {
     //res.send(req.token);
     try{
         if (!req.user){
-             res.status(401).json({msg:"User Not Found "});
+             res.status(401).json({error:"User Not Found "});
              return;
 
 

@@ -25,7 +25,7 @@ class _SignupPageState extends State<SignupPage> {
     emailController.dispose();
     passwordController.dispose();
     nameController.dispose();
-    formKey.currentState!.validate();
+    //formKey.currentState!.validate();
     super.dispose();
   }
 
@@ -44,24 +44,23 @@ class _SignupPageState extends State<SignupPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: BlocConsumer<AuthCubit, AuthState>(
-        listener :(context, state) {
+        listener: (context, state) {
           // TODO: implement listener
-          if (state is AuthError){
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.error)));
-          }
-          else if (state is AuthSignUp){
-
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Account created ! Login Now")));
-          
+          if (state is AuthError) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.error)));
+          } else if (state is AuthSignUp) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Account created ! Login Now")),
+            );
           }
         },
         builder: (context, state) {
-          if(state is AuthLoading){
-            return const  Center(
-              child: CircularProgressIndicator()
-            );
+          if (state is AuthLoading) {
+            return const Center(child: CircularProgressIndicator());
           }
-          
+
           return Padding(
             padding: EdgeInsets.all(15.0),
             child: Form(

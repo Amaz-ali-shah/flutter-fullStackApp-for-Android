@@ -2,7 +2,7 @@ class UserModel {
   final String id;
   final String email;
   final String name;
-  final String token;
+  final String? token;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -10,7 +10,7 @@ class UserModel {
     required this.id,
     required this.email,
     required this.name,
-    required this.token,
+    this.token,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -21,7 +21,7 @@ class UserModel {
       id: json['id'] as String,
       email: json['email'] as String,
       name: json['name'] as String,
-      token: json['token'] as String,
+      token: json['token'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
