@@ -28,6 +28,8 @@
 // }
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:frontend/features/home/pages/add_new_task_page.dart';
+import 'package:frontend/features/home/widgets/date_selector.dart';
 import 'package:frontend/features/home/widgets/task_card.dart';
 
 class HomePage extends StatelessWidget {
@@ -45,7 +47,7 @@ class HomePage extends StatelessWidget {
         actions: [
           IconButton(
             onPressed: () {
-              // TODO: Add task navigation
+              Navigator.push(context, AddNewTaskPage.route());
             },
             icon: const Icon(CupertinoIcons.add),
           ),
@@ -53,17 +55,22 @@ class HomePage extends StatelessWidget {
       ),
       body: Column(
         children: [
+          DateSelector(),
           Row(
             children: [
               Expanded(
                 child: TaskCard(
                   color: Colors.blue,
                   headerText: 'Complete Flutter project',
-                  descriptionText: 'Finalize the app and submit for review',
+                  descriptionText:
+                      'Finalize the app and submit for review Finalize the app and submit for reviewFinalize the app and submit for reviewFinalize the app and submit for reviewFinalize the app and submit for reviewFinalize the app and submit for reviewFinalize the app and submit for reviewFinalize the app and submit for review',
                 ),
               ),
               const SizedBox(width: 10), // spacing
-              const CircleAvatar(radius: 15, backgroundColor: Colors.red),
+              const CircleAvatar(radius: 5, backgroundColor: Colors.blue),
+              const SizedBox(width: 10), // spacing
+              Text("10:00 AM", style: TextStyle(fontSize: 15)),
+              const SizedBox(width: 10), // spacing
             ],
           ),
         ],

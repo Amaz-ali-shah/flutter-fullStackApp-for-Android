@@ -1,12 +1,14 @@
 import express from "express";
 import authRouter from "./routes/auth.js";
+import taskRouter from "./routes/task.js";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // ✅ and this
 
 
-app.use("/auth",authRouter)
+app.use("/auth",authRouter);
+app.use("/tasks",taskRouter);
 
 
 app.get("/", (req,res) =>{
