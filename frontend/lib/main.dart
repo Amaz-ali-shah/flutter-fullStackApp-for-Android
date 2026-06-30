@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:frontend/cubit/auth_cubit.dart';
-//import 'package:frontend/features/auth/pages/login_page.dart';
+import 'package:frontend/features/auth/cubit/auth_cubit.dart';
 import 'package:frontend/features/auth/pages/signup_page.dart';
-import 'package:frontend/features/home/cubit/task_cubit.dart';
+import 'package:frontend/features/home/cubit/tasks_cubit.dart';
 import 'package:frontend/features/home/pages/home_page.dart';
 
 void main() {
@@ -11,7 +10,7 @@ void main() {
     MultiBlocProvider(
       providers: [
         BlocProvider(create: (_) => AuthCubit()),
-        BlocProvider(create: (_) => TaskCubit()),
+        BlocProvider(create: (_) => TasksCubit()),
       ],
       child: const MyApp(),
     ),
@@ -26,20 +25,19 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  // This widget is the root of your application.
-
   @override
   void initState() {
     super.initState();
     context.read<AuthCubit>().getUserData();
   }
 
+  @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
       title: 'Task App',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        fontFamily: "Cera-Pro",
+        fontFamily: "Cera Pro",
         inputDecorationTheme: InputDecorationTheme(
           contentPadding: const EdgeInsets.all(27),
           enabledBorder: OutlineInputBorder(
@@ -55,26 +53,24 @@ class _MyAppState extends State<MyApp> {
             borderRadius: BorderRadius.circular(10),
           ),
           errorBorder: OutlineInputBorder(
-            borderSide: BorderSide(
-              color: const Color.fromARGB(255, 218, 6, 6),
-              width: 3,
-            ),
+            borderSide: const BorderSide(color: Colors.red, width: 3),
             borderRadius: BorderRadius.circular(10),
           ),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.black,
-            minimumSize: Size(double.infinity, 60),
+            minimumSize: const Size(double.infinity, 60),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(15),
             ),
           ),
         ),
+        useMaterial3: true,
       ),
       home: BlocBuilder<AuthCubit, AuthState>(
         builder: (context, state) {
-          if (state is AuthUserLoggedIn) {
+          if (state is AuthLoggedIn) {
             return const HomePage();
           }
           return const SignupPage();

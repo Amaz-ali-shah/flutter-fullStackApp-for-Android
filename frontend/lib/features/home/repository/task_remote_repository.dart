@@ -1,108 +1,123 @@
-// import 'dart:convert';
-// import 'package:frontend/core/constants/constants.dart';
-// import 'package:frontend/models/task_model.dart';
-// import 'package:http/http.dart' as http;
-
-// class TaskRemoteRepository {
-//   Future<TaskModel> createTask({
-//     required String title,
-//     required String description,
-//     required String hexColor,
-//     required String token,
-//     required DateTime dueAt,
-//   }) async {
-//     try {
-//       final res = await http.post(
-//         Uri.parse("${Constants.backendUri}/tasks"),
-//         headers: {'Content-Type': 'application/json', 'X-Authorization': token},
-//         body: jsonEncode({
-//           'title': title,
-//           'description': description,
-//           'hexColor': hexColor,
-//           'dueAt': dueAt.toIso8601String(),
-//         }),
-//       );
-
-//       if (res.statusCode != 201) {
-//         throw jsonDecode(res.body)['error'];
-//       }
-
-//       final decoded = jsonDecode(res.body);
-
-//        // If backend returns [...], unwrap it
-//       final taskMap = decoded is List
-//       ? decoded[0] as Map<String, dynamic>
-//       : decoded as Map<String, dynamic>;
-
-//       return TaskModel.fromJson(taskMap);
-
-//       // return TaskModel.fromJson(res.body);
-//     } catch (e) {
-//       rethrow; // fine, though this does nothing extra – you could remove the catch entirely
-//     }
-//   }
-// }
 import 'dart:convert';
+
 import 'package:frontend/core/constants/constants.dart';
+import 'package:frontend/core/constants/utils.dart';
+import 'package:frontend/features/home/repository/task_local_repository.dart';
 import 'package:frontend/models/task_model.dart';
 import 'package:http/http.dart' as http;
+import 'package:uuid/uuid.dart';
 
 class TaskRemoteRepository {
+  final taskLocalRepository = TaskLocalRepository();
+
   Future<TaskModel> createTask({
     required String title,
     required String description,
     required String hexColor,
     required String token,
+    required String uid,
     required DateTime dueAt,
   }) async {
-    final res = await http.post(
-      Uri.parse("${Constants.backendUri}/tasks"),
-      headers: {'Content-Type': 'application/json', 'X-Authorization': token},
-      body: jsonEncode({
-        'title': title,
-        'description': description,
-        'hexColor': hexColor,
-        'dueAt': dueAt.toIso8601String(),
-      }),
-    );
+    try {
+      final res = await http.post(Uri.parse("${Constants.backendUri}/tasks"),
+          headers: {
+            'Content-Type': 'application/json',
+            'x-auth-token': token,
+          },
+          body: jsonEncode(
+            {
+              'title': title,
+              'description': description,
+              'hexColor': hexColor,
+              'dueAt': dueAt.toIso8601String(),
+            },
+          ));
 
-    if (res.statusCode != 201) {
-      throw jsonDecode(res.body)['error'];
+      if (res.statusCode != 201) {
+        throw jsonDecode(res.body)['error'];
+      }
+
+      return TaskModel.fromJson(res.body);
+    } catch (e) {
+      try {
+        final taskModel = TaskModel(
+          id: const Uuid().v6(),
+          uid: uid,
+          title: title,
+          description: description,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          dueAt: dueAt,
+          color: hexToRgb(hexColor),
+          isSynced: 0,
+        );
+        await taskLocalRepository.insertTask(taskModel);
+        return taskModel;
+      } catch (e) {
+        rethrow;
+      }
     }
+  }
 
-    // ✅ Decode first, then unwrap List if backend returns [{ ... }]
-    final decoded = jsonDecode(res.body);
-    final taskMap = decoded is List
-        ? decoded[0] as Map<String, dynamic>
-        : decoded as Map<String, dynamic>;
+  Future<List<TaskModel>> getTasks({required String token}) async {
+    try {
+      final res = await http.get(
+        Uri.parse("${Constants.backendUri}/tasks"),
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token,
+        },
+      );
 
-    return TaskModel.fromJson(taskMap);
-  }   
+      if (res.statusCode != 200) {
+        throw jsonDecode(res.body)['error'];
+      }
 
+      final listOfTasks = jsonDecode(res.body);
+      List<TaskModel> tasksList = [];
 
+      for (var elem in listOfTasks) {
+        tasksList.add(TaskModel.fromMap(elem));
+      }
 
-  Future<List<TaskModel>> getTasks({
-    
+      await taskLocalRepository.insertTasks(tasksList);
+
+      return tasksList;
+    } catch (e) {
+      final tasks = await taskLocalRepository.getTasks();
+      if (tasks.isNotEmpty) {
+        return tasks;
+      }
+      rethrow;
+    }
+  }
+
+  Future<bool> syncTasks({
     required String token,
-   
+    required List<TaskModel> tasks,
   }) async {
-    final res = await http.get(
-      Uri.parse("${Constants.backendUri}/tasks"),
-      headers: {'Content-Type': 'application/json', 'X-Authorization': token},
-      
-    );
+    try {
+      final taskListInMap = [];
+      for (final task in tasks) {
+        taskListInMap.add(task.toMap());
+      }
+      final res = await http.post(
+        Uri.parse("${Constants.backendUri}/tasks/sync"),
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token,
+        },
+        body: jsonEncode(taskListInMap),
+      );
 
-    if (res.statusCode != 200) {
-      throw jsonDecode(res.body)['error'];
+      if (res.statusCode != 201) {
+        throw jsonDecode(res.body)['error'];
+      }
+
+      return true;
+    } catch (e) {
+      print(e);
+      return false;
     }
-
-    final listOfTasks = jsonDecode(res.body);
-    List<TaskModel> tasksList= [];
-
-    for (var elem in listOfTasks){
-      tasksList.add(TaskModel.fromMap(elem));
-    }
-
-    return tasksList;
   }
 }
